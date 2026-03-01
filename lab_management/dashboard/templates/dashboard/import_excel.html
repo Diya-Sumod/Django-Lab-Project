@@ -1,0 +1,159 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Import Excel Data - Lab Management{% endblock %}
+
+{% block content %}
+<div class="main-content">
+    <h2 class="section-title">Import/Update Excel Data</h2>
+    
+    <p style="margin-bottom: 20px; color: #7f8c8d;">
+        Upload your Excel file containing node information. The file will update existing nodes and add new ones.
+        <br><strong>Format matches your Excel exactly!</strong>
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data" style="margin-bottom: 30px;">
+        {% csrf_token %}
+        <div class="upload-area-simple">
+            <div style="font-size: 3em; margin-bottom: 15px;"></div>
+            <h3>Select Excel File to Upload</h3>
+            <p style="color: #7f8c8d; margin-top: 10px;">Supported formats: .xlsx, .xls</p>
+            <input type="file" id="excel_file" name="excel_file" accept=".xlsx,.xls" style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px; width: 100%;">
+        </div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary" style="font-size: 1.1em; padding: 12px 24px;">
+                Import/Update Data
+            </button>
+            <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">
+                Back to Dashboard
+            </a>
+        </div>
+    </form>
+
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 30px;">
+        <h3 style="color: #2c3e50; margin-bottom: 15px;">Expected Excel Format</h3>
+        <p style="margin-bottom: 20px; color: #7f8c8d;">
+            The system can import both clusters and nodes from the same Excel file. 
+            Rows with CLUSTER NAME but no SERVICE TAG are treated as cluster definitions.
+            Rows with SERVICE TAG are treated as node entries.
+        </p>
+        
+        <h4 style="color: #3498db; margin-bottom: 10px;">Cluster Columns (Optional)</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>CLUSTER NAME</strong></td>
+                        <td><strong>Yes (for clusters)</strong></td>
+                        <td>Unique cluster name</td>
+                    </tr>
+                    <tr>
+                        <td><strong>USER</strong></td>
+                        <td>No</td>
+                        <td>Cluster user name</td>
+                    </tr>
+                    <tr>
+                        <td><strong>DESCRIPTION</strong></td>
+                        <td>No</td>
+                        <td>Cluster description</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CLUSTER TYPE</strong></td>
+                        <td>No</td>
+                        <td>Cluster category (infra/provision/validation)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <h4 style="color: #3498db; margin: 20px 0 10px;">Server Columns</h4>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Column Name</th>
+                        <th>Required</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>SERVICE TAG</strong></td>
+                        <td><strong>Yes (for nodes)</strong></td>
+                        <td>Unique service tag identifier</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ROLE</strong></td>
+                        <td>No</td>
+                        <td>Server role (Master, Worker, Storage, GPU, Network)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>SERVER MODEL</strong></td>
+                        <td>No</td>
+                        <td>Server model name/number</td>
+                    </tr>
+                    <tr>
+                        <td><strong>GENERATION</strong></td>
+                        <td>No</td>
+                        <td>Server generation</td>
+                    </tr>
+                    <tr>
+                        <td><strong>CLUSTER NAME</strong></td>
+                        <td>No</td>
+                        <td>Assign server to specific cluster</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IDRAC IP</strong></td>
+                        <td>No</td>
+                        <td>iDRAC IP address</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IDRAC CREDS</strong></td>
+                        <td>No</td>
+                        <td>Format: username:password</td>
+                    </tr>
+                    <tr>
+                        <td><strong>BMC MAC ADDRESS</strong></td>
+                        <td>No</td>
+                        <td>BMC MAC address</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PXE MAC ADDRESS</strong></td>
+                        <td>No</td>
+                        <td>PXE boot MAC address</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px;">
+            <h4 style="color: #1976d2; margin-bottom: 10px;">Example Excel Layout</h4>
+            <div style="font-family: monospace; font-size: 0.9em; background: white; padding: 10px; border-radius: 5px;">
+                ROLE | SERVER_MODEL | GENERATION | SERVICE_TAG | IDRAC_IP | IDRAC_CREDS | BMC_MAC_ADDRESS | PXE_MAC_ADDRESS<br>
+                CLAN_OIM | R6525 | 15G | 10HWG53 | 172.10.5.80 | root/calvin | f4:02:70:e9:50:82 | f4:02:70:b8:a1:3e<br>
+                CLAN_COMPUTE | C6620 | 16G | HS8MN34 | 182.168.0.7 | root/calvin | f4:02:70:e9:51:83 | f4:02:70:b8:a2:3f<br>
+                CLAN_OIM | R7525 | 15G | J8KLM92 | 172.10.5.81 | root/calvin | f4:02:70:e9:52:84 | f4:02:70:b8:a3:40<br>
+                CLAN_COMPUTE | R740xd | 14G | K4NPQ67 | 182.168.0.8 | root/calvin | f4:02:70:e9:53:85 | f4:02:70:b8:a4:41<br>
+                CLAN_STORAGE | R540 | 14G | L8RST34 | 172.10.5.82 | root/calvin | f4:02:70:e9:54:86 | f4:02:70:b8:a5:42
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript removed - File upload works with HTML form only -->
+{% endblock %}

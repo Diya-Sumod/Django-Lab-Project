@@ -1,0 +1,230 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ node.service_tag }} - Node Details{% endblock %}
+
+{% block content %}
+<!-- Header with Navigation -->
+<div style="margin-bottom: 30px;">
+    <a href="{% url 'dashboard:dashboard' %}" 
+       class="btn" 
+       style="background: #95a5a6; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500;">← Back to Dashboard</a>
+    <a href="{% url 'dashboard:edit_cluster' node.cluster.id %}" 
+       class="btn" 
+       style="background: #3498db; color: white; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: 500;">← Back to {{ node.cluster.name }}</a>
+</div>
+
+<!-- Node Header -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 15px; margin-bottom: 30px; color: white;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1 style="margin: 0; font-size: 2.5em; font-weight: 300;">{{ node.service_tag }}</h1>
+            <p style="margin: 5px 0 0 0; font-size: 1.2em; opacity: 0.9;">{{ node.cluster.name }} Cluster</p>
+        </div>
+        <div style="text-align: right;">
+            <div style="background: rgba(255,255,255,0.2); padding: 15px 25px; border-radius: 10px; backdrop-filter: blur(10px);">
+                <div style="font-size: 1.2em; font-weight: bold;">{{ node.role|default:'-' }}</div>
+                <div style="font-size: 0.9em; opacity: 0.8;">Role</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Node Details Form (Primary Focus) -->
+<div style="background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 30px;">
+    <h2 style="margin: 0 0 25px 0; color: #2c3e50; font-size: 1.8em; font-weight: 500;">Node Information</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Service Tag</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.service_tag }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Role</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.role|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Server Model</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.server_model }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Generation</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.generation|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Cluster</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">
+                <a href="{% url 'dashboard:edit_cluster' node.cluster.id %}" style="color: #667eea; text-decoration: none;">{{ node.cluster.name }}</a>
+            </div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Rack No</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.rack_no|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">Current User</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.current_user|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">iDRAC IP</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.idrac_ip|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">iDRAC Credentials</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">
+                {% if node.idrac_creds %}
+                    <code style="background: #e9ecef; padding: 2px 6px; border-radius: 3px;">{{ node.idrac_creds }}</code>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">BMC MAC Address</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.bmc_mac_address|default:'-' }}</div>
+        </div>
+        <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+            <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">PXE MAC Address</div>
+            <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.pxe_mac_address|default:'-' }}</div>
+        </div>
+        {% if node.gpu_count > 0 %}
+            <div style="padding: 15px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #27ae60;">
+                <div style="color: #6c757d; font-size: 0.9em; margin-bottom: 5px;">GPU Configuration</div>
+                <div style="color: #2c3e50; font-weight: 600; font-size: 1.1em;">{{ node.gpu_count }} × {{ node.gpu_name }}</div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div style="margin-top: 30px; display: flex; gap: 12px; justify-content: center;">
+    <button style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 500; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);"
+            onmouseover="this.style.transform='translateY(-2px)';"
+            onmouseout="this.style.transform='translateY(0)';"
+            onclick="editNode()">Edit Node</button>
+    <a href="{% url 'dashboard:delete_node' node.id %}?next={% url 'dashboard:edit_cluster' node.cluster.id %}" 
+       class="btn" 
+       style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; text-decoration: none; padding: 12px 30px; border-radius: 8px; font-weight: 500; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3); display: inline-block;"
+       onmouseover="this.style.transform='translateY(-2px)';"
+       onmouseout="this.style.transform='translateY(0)';"
+       onclick="return confirm('Are you sure you want to remove this node from the cluster?')">Remove Node</a>
+</div>
+
+<!-- Edit Form Modal -->
+<script>
+function editNode() {
+    const formHtml = `
+        <div id="edit-form" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 40px; border-radius: 15px; max-width: 700px; width: 90%; max-height: 90%; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+                <h3 style="margin-bottom: 25px; color: #2c3e50; font-size: 1.8em; font-weight: 500;">Edit Node Details</h3>
+                <form method="post" action="{% url 'dashboard:edit_node' node.id %}">
+                    {% csrf_token %}
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Service Tag *</label>
+                            <input type="text" name="service_tag" value="{{ node.service_tag }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Server Model *</label>
+                            <input type="text" name="server_model" value="{{ node.server_model }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Generation *</label>
+                            <input type="text" name="generation" value="{{ node.generation }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Role (Optional)</label>
+                            <input type="text" name="role" value="{{ node.role }}" 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">iDRAC IP *</label>
+                            <input type="text" name="idrac_ip" value="{{ node.idrac_ip }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">iDRAC Credentials *</label>
+                            <input type="text" name="idrac_creds" value="{{ node.idrac_creds }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">BMC MAC *</label>
+                            <input type="text" name="bmc_mac_address" value="{{ node.bmc_mac_address }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">PXE MAC *</label>
+                            <input type="text" name="pxe_mac_address" value="{{ node.pxe_mac_address }}" required 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Rack No (Optional)</label>
+                            <input type="text" name="rack_no" value="{{ node.rack_no }}" 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">Current User (Optional)</label>
+                            <input type="text" name="current_user" value="{{ node.current_user }}" 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">GPU Name (Optional)</label>
+                            <input type="text" name="gpu_name" value="{{ node.gpu_name }}" 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #2c3e50; font-size: 0.95em;">GPU Count (Optional)</label>
+                            <input type="number" name="gpu_count" value="{{ node.gpu_count }}" min="0" 
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #e1e8ed; border-radius: 8px; font-size: 1em; transition: border-color 0.3s; background: #fafbfc;"
+                                   onfocus="this.style.borderColor='#667eea'; this.style.background='white';"
+                                   onblur="this.style.borderColor='#e1e8ed'; this.style.background='#fafbfc';">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 12px; justify-content: flex-end;">
+                        <button type="button" onclick="closeEditForm()" 
+                                style="background: #95a5a6; color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 500;">Cancel</button>
+                        <button type="submit" 
+                                style="background: linear-gradient(135deg, #27ae60 0%, #229954 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 1em; font-weight: 500; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);"
+                                onmouseover="this.style.transform='translateY(-2px)';"
+                                onmouseout="this.style.transform='translateY(0)';">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', formHtml);
+}
+
+function closeEditForm() {
+    const editForm = document.getElementById('edit-form');
+    if (editForm) {
+        editForm.remove();
+    }
+}
+</script>
+{% endblock %}

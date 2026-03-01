@@ -1,0 +1,34 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Dashboard - Omnia Cluster {% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}" style="background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); color: white; backdrop-filter: blur(10px); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div class="cluster-categories">
+    <a href="{% url 'dashboard:cluster_by_type' 'infra' %}" class="cluster-box">
+        <div class="cluster-box-title">Infra Clusters</div>
+        <div class="cluster-box-count">{{ infra_clusters.count }} Clusters</div>
+        <div class="cluster-box-description">Total Nodes: {{ infra_nodes_total }}</div>
+    </a>
+
+    <a href="{% url 'dashboard:cluster_by_type' 'provision' %}" class="cluster-box">
+        <div class="cluster-box-title">Provision Clusters</div>
+        <div class="cluster-box-count">{{ provision_clusters.count }} Clusters</div>
+        <div class="cluster-box-description">Total Nodes: {{ provision_nodes_total }}</div>
+    </a>
+
+    <a href="{% url 'dashboard:cluster_by_type' 'validation' %}" class="cluster-box">
+        <div class="cluster-box-title">Validation Clusters</div>
+        <div class="cluster-box-count">{{ validation_clusters.count }} Clusters</div>
+        <div class="cluster-box-description">Total Nodes: {{ validation_nodes_total }}</div>
+    </a>
+
+    </div>
+{% endblock %}

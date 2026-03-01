@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}GPU Clusters - Lab Management{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+</div>
+
+<h2 class="section-title">GPU Clusters ({{ total_gpus }} Total GPUs)</h2>
+
+{% if gpu_clusters %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+        {% for cluster in gpu_clusters %}
+            <a href="{% url 'dashboard:cluster_detail' cluster.id %}" style="text-decoration: none; color: inherit;">
+                <div class="cluster-card" style="cursor: pointer;">
+                    <div class="cluster-header">
+                        <div>
+                            <div class="cluster-name">{{ cluster.name }}</div>
+                            <div class="cluster-owner">{{ cluster.gpu_count }} {{ cluster.gpu_type }}</div>
+                        </div>
+                        <div>
+                            <span class="status-badge status-active">{{ cluster.gpu_count }} GPUs</span>
+                        </div>
+                    </div>
+                    
+                    {% if cluster.description %}
+                        <p style="color: #7f8c8d; margin-bottom: 15px;">{{ cluster.description }}</p>
+                    {% endif %}
+                    
+                    <div class="cluster-stats">
+                        <div class="cluster-stat">
+                            <span>{{ cluster.nodes.count }} Nodes</span>
+                        </div>
+                        <div class="cluster-stat">
+                            <span>{{ cluster.gpu_count }} {{ cluster.gpu_type }}</span>
+                        </div>
+                        {% if cluster.ib_band %}
+                            <div class="cluster-stat">
+                                <span>IB: {{ cluster.ib_band }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+    
+    <div style="margin-top: 30px;">
+        <div class="cluster-card">
+            <h3 style="margin-bottom: 15px; color: #2c3e50;">GPU Summary</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div class="cluster-stat">
+                    <span>{{ gpu_clusters.count }} GPU Clusters</span>
+                </div>
+                <div class="cluster-stat">
+                    <span>{{ total_gpus }} Total GPUs</span>
+                </div>
+                <div class="cluster-stat">
+                    <span>{{ gpu_clusters|sum:'nodes.count' }} Total Nodes</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        No GPU clusters found. Clusters with GPUs will appear here.
+    </div>
+{% endif %}
+{% endblock %}

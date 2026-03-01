@@ -1,0 +1,48 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}All Clusters - Lab Management{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+</div>
+
+<h2 class="section-title">All Clusters ({{ clusters.count }} Total)</h2>
+
+{% if clusters %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px;">
+        {% for cluster in clusters %}
+            <a href="{% url 'dashboard:cluster_detail' cluster.id %}" style="text-decoration: none; color: inherit;">
+                <div class="cluster-card" style="cursor: pointer;">
+                    <div class="cluster-header">
+                        <div>
+                            <div class="cluster-name">{{ cluster.name }}</div>
+                            <div class="cluster-owner">User: {{ cluster.owner|default:'-' }}</div>
+                        </div>
+                        <div>
+                            <span class="status-badge status-active">{{ cluster.nodes.count }} Nodes</span>
+                        </div>
+                    </div>
+                    
+                    {% if cluster.description %}
+                        <p style="color: #7f8c8d; margin-bottom: 15px;">{{ cluster.description }}</p>
+                    {% endif %}
+                    
+                    <div style="display: flex; gap: 10px;">
+                        <a href="{% url 'dashboard:cluster_detail' cluster.id %}" class="btn" style="font-size: 0.8em; padding: 5px 10px; background: #3498db; color: white;">
+                            View Details
+                        </a>
+                        <a href="{% url 'dashboard:delete_cluster' cluster.id %}" class="btn" style="font-size: 0.8em; padding: 5px 10px; background: #e74c3c; color: white;" onclick="return confirm('Are you sure you want to delete this entire cluster and all its nodes?')">
+                            Remove
+                        </a>
+                    </div>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        No clusters found. <a href="{% url 'dashboard:add_cluster' %}">Add your first cluster</a> to get started.
+    </div>
+{% endif %}
+{% endblock %}

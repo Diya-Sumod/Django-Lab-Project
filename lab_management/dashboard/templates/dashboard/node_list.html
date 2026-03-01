@@ -1,0 +1,51 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Node List - Lab Management{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+</div>
+
+<h2 class="section-title">All Nodes ({{ nodes.count }} Total)</h2>
+
+{% if nodes %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Service Tag</th>
+                    <th>Model</th>
+                    <th>Role</th>
+                    <th>iDRAC IP</th>
+                    <th>Generation</th>
+                    <th>Cluster</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for node in nodes %}
+                    <tr>
+                        <td><code>{{ node.service_tag }}</code></td>
+                        <td>{{ node.server_model }}</td>
+                        <td>{{ node.role|default:'-' }}</td>
+                        <td><code>{{ node.idrac_ip|default:'-' }}</code></td>
+                        <td>{{ node.generation|default:'-' }}</td>
+                        <td><a href="{% url 'dashboard:cluster_detail' node.cluster.id %}" style="color: #3498db;">{{ node.cluster.name }}</a></td>
+                        <td>
+                            <div style="display: flex; gap: 5px;">
+                                <a href="{% url 'dashboard:node_detail' node.id %}" class="btn" style="font-size: 0.7em; padding: 3px 6px; background: #3498db; color: white;">View</a>
+                                <a href="{% url 'dashboard:delete_node' node.id %}?next={{ request.path }}" class="btn" style="font-size: 0.7em; padding: 3px 6px; background: #e74c3c; color: white;" onclick="return confirm('Are you sure you want to delete this node?')">Remove</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="alert alert-info">
+        No nodes found. <a href="{% url 'dashboard:add_cluster' %}">Add a cluster with nodes</a> to get started.
+    </div>
+{% endif %}
+{% endblock %}

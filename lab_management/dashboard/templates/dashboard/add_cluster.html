@@ -1,0 +1,200 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}
+    {% if cluster %}Add Nodes to {{ cluster.name }}{% else %}Add New Cluster{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+    {% if cluster %}
+        <a href="{% url 'dashboard:cluster_detail' cluster.id %}" class="btn" style="background: #95a5a6; color: white;">Back to Cluster</a>
+    {% endif %}
+</div>
+
+<h2 class="section-title">
+    {% if cluster %}Add Nodes to {{ cluster.name }}{% else %}Add New Cluster{% endif %}
+</h2>
+
+<form method="post" style="max-width: 1000px; margin: 0 auto;">
+    {% csrf_token %}
+    
+    {% if not cluster %}
+        <div class="cluster-card" style="margin-bottom: 30px;">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">Cluster Information</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: white;">
+                        Cluster Name *
+                    </label>
+                    <input type="text" name="name" placeholder="Enter cluster name *" required
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; background: white;"
+                           value="{{ cluster.name }}">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: white;">
+                        User Name *
+                    </label>
+                    <input type="text" name="owner" placeholder="Enter user name *" required
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; background: white;"
+                           value="{{ cluster.owner }}">
+                </div>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600; color: white;">
+                        Cluster Type
+                    </label>
+                    <select name="cluster_type" 
+                            style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; background: white;"
+                            {% if preselected_type %}value="{{ preselected_type }}"{% endif %}>
+                        <option value="">Select a category</option>
+                        <option value="infra" {% if preselected_type == 'infra' %}selected{% endif %}>Infra</option>
+                        <option value="provision" {% if preselected_type == 'provision' %}selected{% endif %}>Provision</option>
+                        <option value="validation" {% if preselected_type == 'validation' %}selected{% endif %}>Validation</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600; color: white;">
+                    Description
+                </label>
+                <textarea name="description" rows="3"
+                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; resize: vertical;"
+                          placeholder="Optional description of the cluster purpose or configuration"></textarea>
+            </div>
+        </div>
+    {% else %}
+        <input type="hidden" name="cluster_id" value="{{ cluster.id }}">
+        <input type="hidden" name="name" value="{{ cluster.name }}">
+        <input type="hidden" name="cluster_type" value="{{ cluster.cluster_type }}">
+        <input type="hidden" name="description" value="{{ cluster.description }}">
+    {% endif %}
+
+    <div class="cluster-card">
+        <h3 style="margin-bottom: 20px; color: #2c3e50;">Node Details</h3>
+        
+        <div id="server-rows">
+            <div class="server-row" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                <!-- First Row - Mandatory Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="service_tag_0" placeholder="Service Tag *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="server_model_0" placeholder="Server Model *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="idrac_ip_0" placeholder="iDRAC IP *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Second Row - Mandatory Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="bmc_mac_0" placeholder="BMC MAC *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="pxe_mac_0" placeholder="PXE MAC *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="idrac_creds_0" placeholder="iDRAC Credentials *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Third Row - Mandatory/Optional Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="generation_0" placeholder="Generation *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="role_0" placeholder="Role (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="rack_no_0" placeholder="Rack No (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Fourth Row - Optional Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="current_user_0" placeholder="Current User (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="gpu_name_0" placeholder="GPU Name (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="number" name="gpu_count_0" placeholder="GPU Count (Optional)" min="0"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="button" onclick="addServerRow()" 
+                    style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Add More Nodes
+            </button>
+            <button type="submit" 
+                    style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                {% if cluster %}Add Nodes{% else %}Create Cluster{% endif %}
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+let serverRowCount = 1;
+
+function addServerRow() {
+    const container = document.getElementById('server-rows');
+    const newRow = document.createElement('div');
+    newRow.className = 'server-row';
+    newRow.style.cssText = 'background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;';
+    
+    newRow.innerHTML = `
+        <!-- First Row - Mandatory Fields -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <input type="text" name="service_tag_${serverRowCount}" placeholder="Service Tag *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="server_model_${serverRowCount}" placeholder="Server Model *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="idrac_ip_${serverRowCount}" placeholder="iDRAC IP *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+        </div>
+        
+        <!-- Second Row - Mandatory Fields -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <input type="text" name="bmc_mac_${serverRowCount}" placeholder="BMC MAC *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="pxe_mac_${serverRowCount}" placeholder="PXE MAC *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="idrac_creds_${serverRowCount}" placeholder="iDRAC Credentials *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+        </div>
+        
+        <!-- Third Row - Mandatory/Optional Fields -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <input type="text" name="generation_${serverRowCount}" placeholder="Generation *" required
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="role_${serverRowCount}" placeholder="Role (Optional)"
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="rack_no_${serverRowCount}" placeholder="Rack No (Optional)"
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+        </div>
+        
+        <!-- Fourth Row - Optional Fields -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <input type="text" name="current_user_${serverRowCount}" placeholder="Current User (Optional)"
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="text" name="gpu_name_${serverRowCount}" placeholder="GPU Name (Optional)"
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            <input type="number" name="gpu_count_${serverRowCount}" placeholder="GPU Count (Optional)" min="0"
+                   style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+        </div>
+    `;
+    
+    container.appendChild(newRow);
+    serverRowCount++;
+}
+</script>
+{% endblock %}

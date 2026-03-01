@@ -1,0 +1,90 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}{{ node.service_tag }} - Node Details{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+    <a href="{% url 'dashboard:cluster_detail' node.cluster.id %}" class="btn" style="background: #3498db; color: white;">Back to {{ node.cluster.name }}</a>
+</div>
+
+<div class="cluster-card">
+    <div class="cluster-header">
+        <div>
+            <div class="cluster-name">{{ node.service_tag }}</div>
+            <div class="cluster-owner">{{ node.cluster.name }} Cluster</div>
+        </div>
+        <div>
+            <span class="status-badge status-active">Active</span>
+        </div>
+    </div>
+    
+    <div class="cluster-stats">
+        <div class="cluster-stat">
+            <span>{{ node.role|default:'-' }}</span>
+        </div>
+        <div class="cluster-stat">
+            <span>{{ node.server_model }}</span>
+        </div>
+        <div class="cluster-stat">
+            <span>{{ node.generation|default:'-' }}</span>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+    <div class="cluster-card">
+        <h3 style="margin-bottom: 15px; color: #2c3e50;">Node Information</h3>
+        <div style="display: grid; gap: 10px;">
+            <div><strong>Service Tag:</strong> {{ node.service_tag }}</div>
+            <div><strong>Role:</strong> {{ node.role|default:'-' }}</div>
+            <div><strong>Server Model:</strong> {{ node.server_model }}</div>
+            <div><strong>Generation:</strong> {{ node.generation|default:'-' }}</div>
+            <div><strong>Cluster:</strong> <a href="{% url 'dashboard:cluster_detail' node.cluster.id %}" style="color: #3498db;">{{ node.cluster.name }}</a></div>
+        </div>
+    </div>
+    
+    <div class="cluster-card">
+        <h3 style="margin-bottom: 15px; color: #2c3e50;">Network Information</h3>
+        <div style="display: grid; gap: 10px;">
+            <div><strong>iDRAC IP:</strong> {{ node.idrac_ip|default:'-' }}</div>
+            <div><strong>iDRAC Credentials:</strong> 
+                {% if node.idrac_creds %}
+                    <code>{{ node.idrac_creds }}</code>
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+            <div><strong>BMC MAC Address:</strong> {{ node.bmc_mac_address|default:'-' }}</div>
+            <div><strong>PXE MAC Address:</strong> {{ node.pxe_mac_address|default:'-' }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="cluster-card" style="margin-top: 20px;">
+    <h3 style="margin-bottom: 15px; color: #2c3e50;">Cluster Information</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+        <div class="cluster-stat">
+            <span>{{ node.cluster.name }}</span>
+        </div>
+        <div class="cluster-stat">
+            <span>{{ node.cluster.nodes.count }} Nodes</span>
+        </div>
+        {% if node.cluster.gpu_count > 0 %}
+            <div class="cluster-stat">
+                <span>{{ node.cluster.gpu_count }} {{ node.cluster.gpu_type }}</span>
+            </div>
+        {% endif %}
+        {% if node.cluster.ib_band %}
+            <div class="cluster-stat">
+                <span>IB: {{ node.cluster.ib_band }}</span>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div style="margin-top: 20px; display: flex; gap: 10px;">
+    <button style="background: #95a5a6; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Clear</button>
+    <a href="{% url 'dashboard:delete_node' node.id %}?next={% url 'dashboard:cluster_detail' node.cluster.id %}" class="btn" style="background: #e74c3c; color: white;" onclick="return confirm('Are you sure you want to remove this node from the cluster?')">Remove Node</a>
+</div>
+{% endblock %}

@@ -1,0 +1,158 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Add Nodes to Existing Cluster{% endblock %}
+
+{% block content %}
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+{% endif %}
+
+<div style="margin-bottom: 20px;">
+    <a href="{% url 'dashboard:dashboard' %}" class="btn" style="background: #95a5a6; color: white;">Back to Dashboard</a>
+    <a href="{% url 'dashboard:cluster_by_type' preselected_type %}" class="btn" style="background: #95a5a6; color: white;">Back to {{ preselected_type|title }}</a>
+</div>
+
+<h2 class="section-title">Add Nodes to Existing Cluster</h2>
+
+<form method="post" style="max-width: 800px; margin: 0 auto;">
+    {% csrf_token %}
+    
+    <div class="cluster-card" style="margin-bottom: 30px;">
+        <h3 style="margin-bottom: 20px; color: #2c3e50;">Select Cluster</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: white;">
+                Choose Cluster *
+            </label>
+            <select name="cluster_id" required
+                    style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 1em; background: white;">
+                <option value="">Select a cluster</option>
+                {% for cluster in clusters %}
+                    <option value="{{ cluster.id }}">{{ cluster.name }} ({{ cluster.nodes.count }} nodes)</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="cluster-card">
+        <h3 style="margin-bottom: 20px; color: #2c3e50;">Node Details</h3>
+        
+        <div id="node-rows">
+            <div class="server-row" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+                <!-- First Row - Mandatory Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="service_tag_0" placeholder="Service Tag *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="server_model_0" placeholder="Server Model *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="idrac_ip_0" placeholder="iDRAC IP *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Second Row - Mandatory Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="bmc_mac_0" placeholder="BMC MAC *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="pxe_mac_0" placeholder="PXE MAC *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="idrac_creds_0" placeholder="iDRAC Credentials *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Third Row - Mandatory/Optional Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="generation_0" placeholder="Generation *" required
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="role_0" placeholder="Role (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="rack_no_0" placeholder="Rack No (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+                
+                <!-- Fourth Row - Optional Fields -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                    <input type="text" name="current_user_0" placeholder="Current User (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="text" name="gpu_name_0" placeholder="GPU Name (Optional)"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                    <input type="number" name="gpu_count_0" placeholder="GPU Count (Optional)" min="0"
+                           style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="button" onclick="addNodeRow()" 
+                    style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Add More Nodes
+            </button>
+            <button type="submit" 
+                    style="background: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                Add Nodes to Cluster
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+let nodeRowCount = 1;
+
+function addNodeRow() {
+    const container = document.getElementById('node-rows');
+    const newRow = document.createElement('div');
+    newRow.className = 'server-row';
+    newRow.style.cssText = 'display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; padding: 15px; background: rgba(255,255,255,0.05); border-radius: 8px;';
+    
+    newRow.innerHTML = `
+        <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #e0e0e0;">
+            <!-- First Row - Mandatory Fields -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="text" name="service_tag_${nodeRowCount}" placeholder="Service Tag *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="server_model_${nodeRowCount}" placeholder="Server Model *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="idrac_ip_${nodeRowCount}" placeholder="iDRAC IP *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            </div>
+            
+            <!-- Second Row - Mandatory Fields -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="text" name="bmc_mac_${nodeRowCount}" placeholder="BMC MAC *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="pxe_mac_${nodeRowCount}" placeholder="PXE MAC *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="idrac_creds_${nodeRowCount}" placeholder="iDRAC Credentials *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            </div>
+            
+            <!-- Third Row - Mandatory/Optional Fields -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="text" name="generation_${nodeRowCount}" placeholder="Generation *" required
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="role_${nodeRowCount}" placeholder="Role (Optional)"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="rack_no_${nodeRowCount}" placeholder="Rack No (Optional)"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            </div>
+            
+            <!-- Fourth Row - Optional Fields -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <input type="text" name="current_user_${nodeRowCount}" placeholder="Current User (Optional)"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="text" name="gpu_name_${nodeRowCount}" placeholder="GPU Name (Optional)"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+                <input type="number" name="gpu_count_${nodeRowCount}" placeholder="GPU Count (Optional)" min="0"
+                       style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9em;">
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(newRow);
+    nodeRowCount++;
+}
+</script>
+{% endblock %}
