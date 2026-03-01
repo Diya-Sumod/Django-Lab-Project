@@ -11,7 +11,7 @@ import tempfile
 
 # Django imports
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Count
 from django.shortcuts import render, redirect, get_object_or_404
 
 # Local imports
@@ -193,6 +193,15 @@ def cluster_detail(request, cluster_id):
 
 
 def edit_cluster(request, cluster_id):
+    """Handle editing cluster information.
+    
+    Args:
+        request: HTTP request object
+        cluster_id: ID of the cluster to edit
+        
+    Returns:
+        Rendered edit cluster template or redirect after update
+    """
     cluster = get_object_or_404(Cluster, id=cluster_id)
     nodes = cluster.nodes.all()
 
@@ -234,6 +243,15 @@ def edit_cluster(request, cluster_id):
 
 
 def node_detail(request, node_id):
+    """Display detailed information about a specific node.
+    
+    Args:
+        request: HTTP request object
+        node_id: ID of the node to display
+        
+    Returns:
+        Rendered node detail template
+    """
     node = get_object_or_404(Node, id=node_id)
 
     context = {
@@ -244,6 +262,15 @@ def node_detail(request, node_id):
 
 
 def edit_node(request, node_id):
+    """Handle editing node information.
+    
+    Args:
+        request: HTTP request object
+        node_id: ID of the node to edit
+        
+    Returns:
+        Redirect to node detail after update
+    """
     node = get_object_or_404(Node, id=node_id)
 
     if request.method == 'POST':
@@ -275,6 +302,14 @@ def edit_node(request, node_id):
 
 
 def cluster_list(request):
+    """Display list of all clusters.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered cluster list template
+    """
     clusters = Cluster.objects.all().prefetch_related('nodes')
 
     context = {
@@ -285,6 +320,14 @@ def cluster_list(request):
 
 
 def node_list(request):
+    """Display list of all nodes.
+    
+    Args:
+        request: HTTP request object
+        
+    Returns:
+        Rendered node list template
+    """
     nodes = Node.objects.select_related('cluster').all()
 
     context = {
@@ -454,6 +497,15 @@ def add_cluster(request):
 
 
 def delete_node(request, node_id):
+    """Handle deleting a node from cluster.
+    
+    Args:
+        request: HTTP request object
+        node_id: ID of the node to delete
+        
+    Returns:
+        Redirect to next URL after deletion
+    """
     node = get_object_or_404(Node, id=node_id)
     cluster_name = node.cluster.name
     service_tag = node.service_tag

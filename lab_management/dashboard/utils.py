@@ -24,7 +24,15 @@ def import_from_excel(file_path):
         # Find header row
         header_row = None
         for row in sheet.iter_rows():
-            if any(cell.value and ('ROLE' in str(cell.value).upper() or 'SERVER_MODEL' in str(cell.value).upper()) for cell in row):
+            # Check if this row contains header markers
+            has_header = any(
+                cell.value and (
+                    'ROLE' in str(cell.value).upper() or 
+                    'SERVER_MODEL' in str(cell.value).upper()
+                ) 
+                for cell in row
+            )
+            if has_header:
                 header_row = row
                 break
 

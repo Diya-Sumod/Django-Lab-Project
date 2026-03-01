@@ -1,9 +1,18 @@
+"""
+Django admin configuration for lab management dashboard.
+
+This module configures the Django admin interface for managing
+clusters, nodes, and servers with custom display options.
+"""
+
 from django.contrib import admin
 from .models import Cluster, Server
 
 
 @admin.register(Cluster)
 class ClusterAdmin(admin.ModelAdmin):
+    """Admin configuration for Cluster model."""
+
     list_display = ['name', 'owner', 'gpu_count', 'gpu_type', 'ib_band', 'created_at']
     list_filter = ['created_at', 'gpu_type']
     search_fields = ['name', 'owner', 'description']
@@ -12,22 +21,31 @@ class ClusterAdmin(admin.ModelAdmin):
 
 @admin.register(Server)
 class ServerAdmin(admin.ModelAdmin):
+    """Admin configuration for Server model."""
+
     list_display = ['service_tag', 'server_model', 'role', 'cluster', 'idrac_ip', 'status']
     list_filter = ['status', 'cluster', 'created_at']
     search_fields = ['service_tag', 'server_model', 'cluster__name', 'role']
     readonly_fields = ['created_at', 'updated_at']
-    
+
     fieldsets = (
         ('Basic Information', {
-            'fields': ('cluster', 'role', 'server_model', 'generation', 'service_tag', 'status')
+            'fields': (
+                'cluster', 'role', 'server_model', 
+                'generation', 'service_tag', 'status'
+            ),
+            'classes': ('wide',),
         }),
         ('iDRAC Information', {
-            'fields': ('idrac_ip', 'idrac_username', 'idrac_password')
+            'fields': ('idrac_ip', 'idrac_username', 'idrac_password'),
+            'classes': ('collapse',),
         }),
         ('Network Information', {
-            'fields': ('bmc_mac_address', 'pxe_mac_address')
+            'fields': ('bmc_mac_address', 'pxe_mac_address'),
+            'classes': ('collapse',),
         }),
         ('Additional Information', {
-            'fields': ('notes', 'created_at', 'updated_at')
+            'fields': ('notes', 'created_at', 'updated_at'),
+            'classes': ('collapse',),
         }),
     )
