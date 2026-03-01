@@ -1,3 +1,10 @@
+"""
+Utility functions for lab management dashboard.
+
+This module contains helper functions for Excel import and data processing.
+"""
+
+
 import openpyxl
 from django.db import transaction
 from .models import Cluster, Server
@@ -7,23 +14,23 @@ def import_from_excel(file_path):
     """
     Import clusters and nodes from Excel file.
     Expected columns for clusters: CLUSTER NAME, OWNER, DESCRIPTION, GPU COUNT, GPU TYPE, IB BAND
-    Expected columns for nodes: ROLE, SERVER MODEL, GENERATION, SERVICE TAG, IDRAC IP, 
+    Expected columns for nodes: ROLE, SERVER MODEL, GENERATION, SERVICE TAG, IDRAC IP,
     IDRAC CREDS, BMC MAC ADDRESS, PXE MAC ADDRESS, CLUSTER NAME
     """
     try:
         workbook = openpyxl.load_workbook(file_path)
         sheet = workbook.active
-        
+
         # Find header row
         header_row = None
         for row in sheet.iter_rows():
             if any(cell.value and ('ROLE' in str(cell.value).upper() or 'SERVER_MODEL' in str(cell.value).upper()) for cell in row):
                 header_row = row
                 break
-        
+
         if not header_row:
             raise ValueError("Header row not found. Expected 'ROLE' or 'SERVER_MODEL' column.")
-        
+
         # Get column indices
         col_indices = {}
         for i, cell in enumerate(header_row):
@@ -59,22 +66,22 @@ def import_from_excel(file_path):
                     col_indices['bmc_mac'] = i
                 elif 'PXE MAC ADDRESS' in col_name or 'PXE_MAC_ADDRESS' in col_name:
                     col_indices['pxe_mac'] = i
-        
+
         imported_clusters = 0
         imported_nodes = 0
         errors = []
         clusters_cache = {}
-        
+
         with transaction.atomic():
             for row in sheet.iter_rows(min_row=header_row[0].row + 1):
                 if not any(cell.value for cell in row):
                     continue
-                
+
                 try:
                     # Check if this is a cluster row (has cluster name but no service tag)
                     cluster_name = str(row[col_indices.get('cluster_name', 0)].value or '').strip() if col_indices.get('cluster_name') is not None else ''
                     service_tag = str(row[col_indices.get('service_tag', 3)].value or '').strip() if col_indices.get('service_tag') is not None else ''
-                    
+
                     # If cluster name exists but no service tag, treat as cluster definition
                     if cluster_name and not service_tag:
                         owner = str(row[col_indices.get('owner', 1)].value or '').strip() if col_indices.get('owner') is not None else ''
@@ -82,7 +89,7 @@ def import_from_excel(file_path):
                         gpu_count = str(row[col_indices.get('gpu_count', 3)].value or '').strip() if col_indices.get('gpu_count') is not None else '0'
                         gpu_type = str(row[col_indices.get('gpu_type', 4)].value or '').strip() if col_indices.get('gpu_type') is not None else ''
                         ib_band = str(row[col_indices.get('ib_band', 5)].value or '').strip() if col_indices.get('ib_band') is not None else ''
-                        
+
                         # Create or update cluster
                         cluster, created = Cluster.objects.update_or_create(
                             name=cluster_name,
@@ -94,12 +101,12 @@ def import_from_excel(file_path):
                                 'ib_band': ib_band
                             }
                         )
-                        
+
                         if created:
                             imported_clusters += 1
                         clusters_cache[cluster_name] = cluster
                         continue
-                    
+
                     # If service tag exists, treat as server row
                     if service_tag:
                         # Extract server data
@@ -111,7 +118,7 @@ def import_from_excel(file_path):
                         bmc_mac = str(row[col_indices.get('bmc_mac', 6)].value or '').strip() if col_indices.get('bmc_mac') is not None else ''
                         pxe_mac = str(row[col_indices.get('pxe_mac', 7)].value or '').strip() if col_indices.get('pxe_mac') is not None else ''
                         server_cluster_name = str(row[col_indices.get('cluster_name', 8)].value or '').strip() if col_indices.get('cluster_name') is not None else ''
-                        
+
                         # Determine cluster
                         if server_cluster_name and server_cluster_name in clusters_cache:
                             cluster = clusters_cache[server_cluster_name]
@@ -142,7 +149,7 @@ def import_from_excel(file_path):
                                 if created:
                                     imported_clusters += 1
                                 clusters_cache['Default Cluster'] = cluster
-                        
+
                         # Check if node with this service tag already exists in any cluster
                         existing_node = Server.objects.filter(service_tag__iexact=service_tag).first()
                         if existing_node:
@@ -163,17 +170,17 @@ def import_from_excel(file_path):
                             imported_nodes += 1
                     else:
                         errors.append(f"Row {row[0].row}: Neither cluster name nor service tag found")
-                        
+
                 except Exception as e:
                     errors.append(f"Row {row[0].row}: {str(e)}")
-        
+
         return {
             'success': True,
             'imported_clusters': imported_clusters,
             'imported_nodes': imported_nodes,
             'errors': errors
         }
-        
+
     except Exception as e:
         return {
             'success': False,

@@ -1,16 +1,34 @@
-from django.shortcuts import render, redirect, get_object_or_404
+"""
+Django views for lab management dashboard.
+
+This module contains view functions for handling HTTP requests and
+rendering templates for the lab management system.
+"""
+
+# Standard library imports
+import os
+import tempfile
+
+# Django imports
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.shortcuts import render, redirect, get_object_or_404
+
+# Local imports
 from .models import Cluster, Node
-import os
-from django.http import HttpResponse
-from django.urls import reverse
-from django.views.decorators.csrf import csrf_exempt
 from .utils import import_from_excel
-import tempfile
 
 
 def _filter_clusters_by_keywords(base_qs, keywords):
+    """Filter clusters by keywords in name or description.
+
+    Args:
+        base_qs: Base queryset of clusters
+        keywords: List of keywords to search for
+
+    Returns:
+        Filtered queryset of clusters
+    """
     q = Q()
     for kw in keywords:
         q |= Q(name__icontains=kw) | Q(description__icontains=kw)
@@ -18,23 +36,42 @@ def _filter_clusters_by_keywords(base_qs, keywords):
 
 
 def _total_nodes_for_clusters(clusters_qs):
-    return clusters_qs.annotate(n_count=Count('nodes')).aggregate(total=Sum('n_count'))['total'] or 0
+    """Calculate total nodes for given clusters.
+
+    Args:
+        clusters_qs: Queryset of clusters
+
+    Returns:
+        Dictionary mapping cluster ID to node count
+    """
+    node_counts = {}
+    for cluster in clusters_qs:
+        node_counts[cluster.id] = cluster.nodes.count()
+    return node_counts
 
 
 def dashboard(request):
+    """Display main dashboard with cluster statistics.
+
+    Args:
+        request: HTTP request object
+
+    Returns:
+        Rendered dashboard template
+    """
     # Get all clusters
     all_clusters = Cluster.objects.all()
-    
+
     # Filter clusters by type
     infra_clusters = all_clusters.filter(cluster_type='infra')
     provision_clusters = all_clusters.filter(cluster_type='provision')
     validation_clusters = all_clusters.filter(cluster_type='validation')
-    
+
     # Count total nodes for each category
     infra_nodes_total = Node.objects.filter(cluster__cluster_type='infra').count()
     provision_nodes_total = Node.objects.filter(cluster__cluster_type='provision').count()
     validation_nodes_total = Node.objects.filter(cluster__cluster_type='validation').count()
-    
+
     context = {
         'infra_clusters': infra_clusters,
         'provision_clusters': provision_clusters,
@@ -43,13 +80,22 @@ def dashboard(request):
         'provision_nodes_total': provision_nodes_total,
         'validation_nodes_total': validation_nodes_total,
     }
-    
+
     return render(request, 'dashboard/dashboard.html', context)
 
 
 def cluster_by_type(request, cluster_type):
+    """Display clusters filtered by type.
+
+    Args:
+        request: HTTP request object
+        cluster_type: Type of cluster to filter
+
+    Returns:
+        Rendered cluster list template
+    """
     clusters = Cluster.objects.all().prefetch_related('nodes')
-    
+
     # Filter clusters by explicit type field
     if cluster_type == 'infra':
         clusters = clusters.filter(cluster_type='infra')
@@ -63,39 +109,47 @@ def cluster_by_type(request, cluster_type):
     else:
         clusters = clusters.none()
         title = "Unknown Category"
-    
+
     context = {
         'clusters': clusters,
         'title': title,
         'cluster_type': cluster_type,
     }
-    
+
     return render(request, 'dashboard/cluster_by_type.html', context)
 
 
 def import_excel(request):
+    """Handle Excel file import for clusters and nodes.
+
+    Args:
+        request: HTTP request object
+
+    Returns:
+        Rendered import template or redirect after processing
+    """
     if request.method == 'POST':
         if 'excel_file' not in request.FILES:
             messages.error(request, 'Please select an Excel file to upload.')
             return render(request, 'dashboard/import_excel.html')
-        
+
         excel_file = request.FILES['excel_file']
-        
+
         # Validate file extension
         if not excel_file.name.endswith(('.xlsx', '.xls')):
             messages.error(request, 'Please upload a valid Excel file (.xlsx or .xls)')
             return render(request, 'dashboard/import_excel.html')
-        
+
         # Save file temporarily
         with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp_file:
             for chunk in excel_file.chunks():
                 tmp_file.write(chunk)
             tmp_file_path = tmp_file.name
-        
+
         try:
             # Import data
             result = import_from_excel(tmp_file_path)
-            
+
             if result['success']:
                 messages.success(request, f"Successfully imported {result['imported_clusters']} clusters and {result['imported_nodes']} nodes.")
                 if result['errors']:
@@ -105,84 +159,93 @@ def import_excel(request):
                 return redirect('dashboard:dashboard')
             else:
                 messages.error(request, f"Import failed: {result['error']}")
-        
+
         except Exception as e:
             messages.error(request, f"Error processing file: {str(e)}")
-        
+
         finally:
             # Clean up temporary file
             if os.path.exists(tmp_file_path):
                 os.unlink(tmp_file_path)
-    
+
     return render(request, 'dashboard/import_excel.html')
 
 
 def cluster_detail(request, cluster_id):
+    """Display detailed information about a specific cluster.
+
+    Args:
+        request: HTTP request object
+        cluster_id: ID of the cluster to display
+
+    Returns:
+        Rendered cluster detail template
+    """
     cluster = get_object_or_404(Cluster, id=cluster_id)
     nodes = cluster.nodes.all()
-    
+
     context = {
         'cluster': cluster,
         'nodes': nodes,
     }
-    
+
     return render(request, 'dashboard/cluster_detail.html', context)
 
 
 def edit_cluster(request, cluster_id):
     cluster = get_object_or_404(Cluster, id=cluster_id)
     nodes = cluster.nodes.all()
-    
+
     if request.method == 'POST':
         try:
             # Get form data
             name = request.POST.get('name', '').strip()
             owner = request.POST.get('owner', '').strip()
             description = request.POST.get('description', '').strip()
-            
+
             # Validate required fields
             if not name:
                 messages.error(request, "Cluster name is required.")
                 return redirect('dashboard:edit_cluster', cluster.id)
-            
+
             if not owner:
                 messages.error(request, "User name is required.")
                 return redirect('dashboard:edit_cluster', cluster.id)
-            
+
             # Update cluster with form data (cluster name, user name, and description are editable)
             cluster.name = name
             cluster.owner = owner
             cluster.description = description
-            
+
             cluster.save()
             messages.success(request, f"Cluster '{cluster.name}' updated successfully.")
             return redirect('dashboard:edit_cluster', cluster.id)
-            
+
         except Exception as e:
             messages.error(request, f"Error updating cluster: {str(e)}")
             return redirect('dashboard:edit_cluster', cluster.id)
-    
+
     context = {
         'cluster': cluster,
         'nodes': nodes,
     }
-    
+
     return render(request, 'dashboard/edit_cluster.html', context)
 
 
 def node_detail(request, node_id):
     node = get_object_or_404(Node, id=node_id)
-    
+
     context = {
         'node': node,
     }
-    
+
     return render(request, 'dashboard/node_detail.html', context)
 
 
 def edit_node(request, node_id):
     node = get_object_or_404(Node, id=node_id)
-    
+
     if request.method == 'POST':
         try:
             # Update node with form data
@@ -198,83 +261,91 @@ def edit_node(request, node_id):
             node.current_user = request.POST.get('current_user', '').strip()
             node.gpu_name = request.POST.get('gpu_name', '').strip()
             node.gpu_count = request.POST.get('gpu_count', 0) or 0
-            
+
             node.save()
             messages.success(request, f"Node '{node.service_tag}' updated successfully.")
             return redirect('dashboard:node_detail', node.id)
-            
+
         except Exception as e:
             messages.error(request, f"Error updating node: {str(e)}")
             return redirect('dashboard:node_detail', node.id)
-    
+
     # If GET request, redirect to node detail
     return redirect('dashboard:node_detail', node.id)
 
 
 def cluster_list(request):
     clusters = Cluster.objects.all().prefetch_related('nodes')
-    
+
     context = {
         'clusters': clusters,
     }
-    
+
     return render(request, 'dashboard/cluster_list.html', context)
 
 
 def node_list(request):
     nodes = Node.objects.select_related('cluster').all()
-    
+
     context = {
         'nodes': nodes,
     }
-    
+
     return render(request, 'dashboard/node_list.html', context)
 
 
 def add_node_to_existing(request):
     nodes = Node.objects.select_related('cluster').all()
-    
+
     context = {
         'nodes': nodes,
     }
-    
+
     return render(request, 'dashboard/add_node_to_existing.html', context)
 
 
 def gpu_list(request):
     # Get clusters that have GPUs
     gpu_clusters = Cluster.objects.filter(gpu_count__gt=0).prefetch_related('nodes')
-    
+
     context = {
         'gpu_clusters': gpu_clusters,
         'total_gpus': sum(cluster.gpu_count for cluster in gpu_clusters),
     }
-    
+
     return render(request, 'dashboard/gpu_list.html', context)
 
 
 def add_cluster(request):
+    """Handle adding new clusters and nodes.
+
+    Args:
+        request: HTTP request object
+
+    Returns:
+        Rendered add cluster template or redirect after creation
+    """
     # Pre-select cluster type from URL parameter
     preselected_type = request.GET.get('type', '')
     cluster_id = request.GET.get('cluster_id', '')
-    
+
     if request.method == 'POST':
         name = request.POST.get('name')
         owner = request.POST.get('owner')
         description = request.POST.get('description', '')
         cluster_type = request.POST.get('cluster_type', '')
         posted_cluster_id = request.POST.get('cluster_id', '')
-        
+
         # Validate required fields (only for new cluster creation)
         if not posted_cluster_id:
             if not name or not name.strip():
                 messages.error(request, "Cluster name is required.")
                 return render(request, 'dashboard/add_cluster.html', {'preselected_type': request.POST.get('cluster_type', preselected_type), 'cluster_id': posted_cluster_id})
-            
+
             if not owner or not owner.strip():
                 messages.error(request, "User name is required.")
                 return render(request, 'dashboard/add_cluster.html', {'preselected_type': request.POST.get('cluster_type', preselected_type), 'cluster_id': posted_cluster_id})
-        
+
         # Collect server rows from the form
         node_count = 0
         server_rows = []
@@ -366,7 +437,7 @@ def add_cluster(request):
                 messages.success(request, f"Added {nodes_created} node(s) to cluster '{cluster.name}'.")
             else:
                 messages.success(request, f"Cluster '{cluster.name}' created with {nodes_created} node(s).")
-            
+
             # Redirect back to the cluster detail page
             return redirect('dashboard:cluster_detail', cluster.id)
 
@@ -378,7 +449,7 @@ def add_cluster(request):
     cluster = None
     if cluster_id:
         cluster = get_object_or_404(Cluster, id=cluster_id)
-    
+
     return render(request, 'dashboard/add_cluster.html', {'preselected_type': preselected_type, 'cluster_id': cluster_id, 'cluster': cluster})
 
 
@@ -386,14 +457,14 @@ def delete_node(request, node_id):
     node = get_object_or_404(Node, id=node_id)
     cluster_name = node.cluster.name
     service_tag = node.service_tag
-    
+
     # Delete the node
     try:
         node.delete()
         messages.success(request, f"Node '{service_tag}' has been removed from cluster '{cluster_name}'.")
     except Exception as e:
         messages.error(request, f"Error deleting node: {str(e)}")
-    
+
     # Get the next parameter for redirect
     next_url = request.GET.get('next', 'dashboard:dashboard')
     if next_url == 'dashboard:dashboard':
@@ -406,22 +477,22 @@ def delete_cluster(request, cluster_id):
     cluster = get_object_or_404(Cluster, id=cluster_id)
     node_count = cluster.nodes.count()
     cluster_name = cluster.name
-    
+
     # Delete the cluster and all its nodes (both GET and POST requests with JavaScript confirmation)
     cluster.delete()
     messages.success(request, f"Cluster '{cluster_name}' and all {node_count} nodes have been deleted.")
-    
+
     # Redirect to dashboard
     return redirect('dashboard:dashboard')
 
 
 def add_server_to_existing(request):
     preselected_type = request.GET.get('type', '')
-    
+
     if request.method == 'POST':
         cluster_id = request.POST.get('cluster_id')
         cluster = get_object_or_404(Cluster, id=cluster_id)
-        
+
         # Collect server rows from the form
         node_count = 0
         server_rows = []
@@ -522,23 +593,23 @@ def add_server_to_existing(request):
 
 def add_server(request):
     clusters = Cluster.objects.all()
-    
+
     if request.method == 'POST':
         cluster_id = request.POST.get('cluster_id')
-        
+
         try:
             cluster = Cluster.objects.get(id=cluster_id)
-            
+
             # Add nodes from form data
             nodes_created = 0
             node_count = 0
-            
+
             # Find all node data from form
             while True:
                 service_tag = request.POST.get(f'service_tag_{node_count}')
                 if not service_tag:
                     break
-                
+
                 role = request.POST.get(f'role_{node_count}', '')
                 server_model = request.POST.get(f'server_model_{node_count}', '')
                 idrac_ip = request.POST.get(f'idrac_ip_{node_count}', '')
@@ -550,10 +621,10 @@ def add_server(request):
                 current_user = request.POST.get(f'current_user_{node_count}', '')
                 gpu_name = request.POST.get(f'gpu_name_{node_count}', '')
                 gpu_count = request.POST.get(f'gpu_count_{node_count}', 0) or 0
-                
+
                 if service_tag.strip():  # Only create if service tag is provided
                     service_tag_clean = service_tag.strip()
-                    
+
                     # Check if node with this service tag already exists in any cluster
                     existing_node = Node.objects.filter(service_tag__iexact=service_tag_clean).first()
                     if existing_node:
@@ -576,23 +647,23 @@ def add_server(request):
                             status='active'
                         )
                         nodes_created += 1
-                
+
                 node_count += 1
-            
+
             if nodes_created > 0:
                 messages.success(request, f"Added {nodes_created} nodes to cluster '{cluster.name}'.")
             else:
                 messages.success(request, f"No nodes added to cluster '{cluster.name}'.")
-            
+
             return redirect('dashboard:dashboard')
-        
+
         except Cluster.DoesNotExist:
             messages.error(request, "Cluster not found.")
         except Exception as e:
             messages.error(request, f"Error adding nodes: {str(e)}")
-    
+
     context = {
         'clusters': clusters,
     }
-    
+
     return render(request, 'dashboard/add_node_to_existing.html', context)
