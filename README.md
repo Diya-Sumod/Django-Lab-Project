@@ -1,4 +1,4 @@
-# 🏗️ Lab Management Dashboard
+# Lab Management Dashboard
 
 A Django-based Cluster Dashboard for efficiently managing clusters and nodes inventory in enterprise environments.
 
@@ -10,7 +10,7 @@ A Django-based Cluster Dashboard for efficiently managing clusters and nodes inv
 - **Database**: SQLite (development), MySQL/PostgreSQL ready
 - **Data Processing**: Pandas for Excel import
 
-## 📋 Project Structure
+## Project Structure
 
 ```
 lab_management/
@@ -41,7 +41,7 @@ lab_management/
 └── README.md             # This file
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 - Python 3.8+
