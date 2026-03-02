@@ -81,8 +81,4 @@ lab_management/
 6. **Run development server**
    ```bash
    python manage.py runserver 0.0.0.0:8000
-   ```
 
-7. **Access the application**
-   - Main application: http://localhost:8000
-   - Admin interface: http://localhost:8000/admin
