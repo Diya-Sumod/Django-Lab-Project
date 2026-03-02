@@ -3,7 +3,7 @@
 A Django-based Cluster Dashboard for efficiently managing clusters and nodes inventory in enterprise environments.
 
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 - **Backend**: Django 4.2+ (Python)
 - **Frontend**: HTML5, CSS3, JavaScript (ES6+)
